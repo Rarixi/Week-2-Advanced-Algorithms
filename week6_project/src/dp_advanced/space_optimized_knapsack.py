@@ -90,3 +90,58 @@ def trace_solution(weights, values, capacity):
             w -= weights[i - 1]
     selected.reverse()
     return max_value, selected
+
+
+if __name__ == "__main__":
+    # A small runnable demo: prints a comparison table and runtime summary showing
+    # knapsack_2d vs. knapsack_1d on a fixed instance, so this file's own space
+    # optimization claim can be checked at a glance without needing the separate
+    # benchmark script in benchmarks/.
+    import random
+    import time
+    import tracemalloc
+
+    rng = random.Random(0)
+    n_items = 25
+    weights = [rng.randint(1, 50) for _ in range(n_items)]
+    values = [rng.randint(1, 100) for _ in range(n_items)]
+
+    print("Space-optimized 0/1 knapsack: 2D table vs. 1D array")
+    print(f"({n_items} items, weights/values chosen at random with seed 0)\n")
+
+    header = f"{'capacity':>10} | {'2D value':>8} | {'1D value':>8} | {'2D time (us)':>13} | {'1D time (us)':>13} | {'2D mem (KB)':>12} | {'1D mem (KB)':>12}"
+    print(header)
+    print("-" * len(header))
+
+    for capacity in (50, 200, 1000, 5000):
+        start = time.perf_counter()
+        value_2d = knapsack_2d(weights, values, capacity)
+        time_2d_us = (time.perf_counter() - start) * 1e6
+
+        start = time.perf_counter()
+        value_1d = knapsack_1d(weights, values, capacity)
+        time_1d_us = (time.perf_counter() - start) * 1e6
+
+        tracemalloc.start()
+        knapsack_2d(weights, values, capacity)
+        _, mem_2d_peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        tracemalloc.start()
+        knapsack_1d(weights, values, capacity)
+        _, mem_1d_peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        assert value_2d == value_1d, "2D and 1D versions disagreed -- correctness bug!"
+
+        print(
+            f"{capacity:>10} | {value_2d:>8} | {value_1d:>8} | "
+            f"{time_2d_us:>13.2f} | {time_1d_us:>13.2f} | "
+            f"{mem_2d_peak / 1024:>12.2f} | {mem_1d_peak / 1024:>12.2f}"
+        )
+
+    print(
+        "\nSummary: both versions agree on every value above (correctness preserved), "
+        "while the 1D version uses dramatically less peak memory, scaling with capacity "
+        "alone (O(capacity)) instead of with capacity times item count (O(n * capacity))."
+    )

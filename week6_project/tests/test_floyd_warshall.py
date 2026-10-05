@@ -10,7 +10,13 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from src.dp_advanced.floyd_warshall import floyd_warshall, reconstruct_path, has_negative_cycle
+from src.dp_advanced.floyd_warshall import (
+    floyd_warshall,
+    reconstruct_path,
+    has_negative_cycle,
+    dijkstra_single_source,
+    compare_with_dijkstra,
+)
 
 INF = float("inf")
 
@@ -71,14 +77,14 @@ class TestFloydWarshallBasics:
 class TestPathReconstruction:
     def test_reconstructs_the_routed_path(self):
         matrix = build_known_graph()
-        _, next_node = floyd_warshall(matrix)
-        path = reconstruct_path(next_node, 0, 3)
+        _, predecessor = floyd_warshall(matrix)
+        path = reconstruct_path(predecessor, 0, 3)
         assert path == [0, 1, 2, 3]
 
     def test_path_cost_matches_reported_distance(self):
         matrix = build_known_graph()
-        distances, next_node = floyd_warshall(matrix)
-        path = reconstruct_path(next_node, 0, 3)
+        distances, predecessor = floyd_warshall(matrix)
+        path = reconstruct_path(predecessor, 0, 3)
         total = sum(matrix[path[i]][path[i + 1]] for i in range(len(path) - 1))
         assert total == distances[0][3]
 
@@ -88,13 +94,13 @@ class TestPathReconstruction:
             [INF, 0, INF],
             [INF, INF, 0],
         ]
-        _, next_node = floyd_warshall(matrix)
-        assert reconstruct_path(next_node, 0, 2) == []
+        _, predecessor = floyd_warshall(matrix)
+        assert reconstruct_path(predecessor, 0, 2) == []
 
     def test_path_to_self_is_single_node(self):
         matrix = build_known_graph()
-        _, next_node = floyd_warshall(matrix)
-        assert reconstruct_path(next_node, 2, 2) == [2]
+        _, predecessor = floyd_warshall(matrix)
+        assert reconstruct_path(predecessor, 2, 2) == [2]
 
 
 class TestNegativeCycles:
@@ -124,3 +130,41 @@ class TestNegativeCycles:
         distances, _ = floyd_warshall(matrix)
         assert has_negative_cycle(distances) is False
         assert distances[0][2] == -3
+
+
+class TestDijkstraComparison:
+    """Dijkstra assumes no negative edges, so these tests only use non-negative
+    graphs -- that restriction is exactly why Floyd-Warshall is more general
+    (it tolerates negative edges, as long as there's no negative cycle)."""
+
+    def test_dijkstra_matches_floyd_warshall_single_source(self):
+        matrix = build_known_graph()
+        distances, _ = floyd_warshall(matrix)
+        dijkstra_distances = dijkstra_single_source(matrix, 0)
+        assert dijkstra_distances == distances[0]
+
+    def test_dijkstra_matches_from_every_source(self):
+        matrix = build_known_graph()
+        distances, _ = floyd_warshall(matrix)
+        for source in range(len(matrix)):
+            assert dijkstra_single_source(matrix, source) == distances[source]
+
+    def test_compare_with_dijkstra_agrees_on_a_known_graph(self):
+        matrix = build_known_graph()
+        result = compare_with_dijkstra(matrix)
+        assert result["distances_agree"] is True
+        assert result["floyd_warshall_time"] >= 0
+        assert result["dijkstra_total_time"] >= 0
+
+    def test_compare_with_dijkstra_agrees_on_random_small_graphs(self):
+        import random
+        rng = random.Random(11)
+        for _ in range(10):
+            n = rng.randint(2, 8)
+            matrix = [[0 if i == j else INF for j in range(n)] for i in range(n)]
+            for i in range(n):
+                for j in range(n):
+                    if i != j and rng.random() < 0.4:
+                        matrix[i][j] = rng.randint(1, 20)
+            result = compare_with_dijkstra(matrix)
+            assert result["distances_agree"] is True

@@ -40,11 +40,29 @@ pytest tests/
 ```bash
 python3 benchmarks/week6_dp_advanced_benchmark.py
 ```
-Writes performance plots and `comparison_table.csv` to `benchmarks/results/`. Takes
-roughly 30-40 seconds -- Matrix Chain Multiplication's naive recursion, Floyd-Warshall
-at larger graph sizes, and TSP's bitmask DP at higher city counts are each
-deliberately pushed close to where they become slow, to make the comparison plots
-show something real.
+Writes performance plots and `comparison_table.csv` to `benchmarks/results/`. Takes a
+couple of minutes -- Matrix Chain Multiplication's naive recursion, Floyd-Warshall at
+graph sizes up to 500 nodes, and TSP's brute force search out to 12 cities are each
+deliberately pushed close to where they become slow, to make the comparison plots show
+something real. TSP's brute force at 12 cities is the single slowest part of the whole
+run.
+
+## Running a Single File Directly
+`space_optimized_knapsack.py` can also be run on its own for a quick comparison,
+without the full benchmark sweep:
+```bash
+python3 src/dp_advanced/space_optimized_knapsack.py
+```
+Prints a small comparison table (value, time, and peak memory for the 2D vs. 1D
+versions at a few capacities) plus a one-line summary.
+
+## Floyd-Warshall vs. Dijkstra
+`floyd_warshall.py` includes `compare_with_dijkstra(matrix)`, which runs
+Floyd-Warshall once and Dijkstra from every node on the same small graph, checks that
+both agree on every pairwise distance, and times both approaches. This is meant for
+small graphs (not the large benchmark sizes above), since repeating Dijkstra once per
+node is its own extra multiplier on top of each run's cost. See
+`tests/test_floyd_warshall.py`'s `TestDijkstraComparison` for example usage.
 
 ## Report
 See `analysis/week6_report.md`.
