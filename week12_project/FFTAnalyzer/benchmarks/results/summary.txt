@@ -1,0 +1,18 @@
+# benchmark summary (full run, numpy 2.5.3, python 3.13.18)
+FFT, n=2^20: iterative 0.175s, Bluestein (n=2^20+1) 4.002s, numpy 0.0188s (9x numpy)
+FFT vs naive DFT at n=4096: DFT 0.536s, iterative FFT 0.00033s (1601x faster)
+recursive vs iterative at n=262144: 1.180s vs 0.0546s (22x)
+iterative FFT 2^18 -> 2^20 (4x data): 3.21x time (n log n predicts 4.44x)
+FFT accuracy at n=4096: FFT vs numpy 5.16e-16, direct DFT sum vs numpy 2.18e-15; round trip at n=16384: 4.51e-16
+convolution (signal 2^14): FFT wins from kernel length 2048; at k=8192 direct 0.058s vs FFT 0.0086s
+matmul n=512: vectorized 0.195s, Strassen 0.137s, numpy 0.0039s; triple loop at n=256: 0.44s
+matmul error vs numpy at n=512: vectorized 7.6e-16, Strassen 2.4e-15
+cond_2(Hilbert): n=8 1.53e+10, n=10 1.60e+13, n=12 1.60e+16 (1/eps = 4.5e+15)
+QR orthogonality loss, Hilbert n=10 (cond 1.6e+13): CGS 3.5e+00, MGS 4.4e-04, Householder 1.7e-15
+LU solve, Hilbert n=10: forward error 7.7e-05, residual 1.2e-16; n=12: forward error 1.4e-01
+tiny pivot [[1e-20,1],[1,1]] x=[1,1]: no pivoting gives [0.0, 1.0], partial pivoting gives [1.0, 1.0]
+cancellation: quadratic small root (b=1e8)   naive rel err 2.5e-01, stable 0.0e+00
+cancellation: (1 - cos x) / x^2              naive rel err 1.0e+00, stable 0.0e+00
+cancellation: exp(x) - 1                     naive rel err 8.9e-05, stable 0.0e+00
+cancellation: variance, mean 1e9             naive rel err 1.0e+00, stable 0.0e+00
+cancellation: sum 1 + 1e6 * 1e-16            naive rel err 1.0e-10, stable 0.0e+00
