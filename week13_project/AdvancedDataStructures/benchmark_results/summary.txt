@@ -1,0 +1,20 @@
+# benchmark summary (full run, python 3.13.18, numpy 2.5.3)
+range trees n=262144: query Fenwick 3.29us, iterative segment 3.80us, lazy segment 16.09us; update Fenwick 1.67us, iterative 3.53us, lazy 14.91us
+lazy segment query time grew 2.75x from n=1024 to n=262144 (256x more data; log2 ratio 1.80)
+build n=262144: Fenwick 0.027s, iterative segment 0.035s, lazy segment 0.133s
+memory n=65536: Fenwick 1.0 words/elem (1.50 MiB Python), lazy segment 20 words/elem (12.00 MiB Python)
+range add n=65536, width 65536: lazy segment 0.4us, range Fenwick 2.6us, naive loop 2313us
+persistent n=65536: update 9.8us vs ephemeral 11.6us (0.84x), 17 new nodes/update (log2 n + 1 = 17); query newest 13.7us, version 0 12.6us, ephemeral 11.1us
+persistent 5001 versions: 216071 nodes stored vs 655486071 for full copies (3034x smaller); consecutive-version diff 31us, 1 change(s)
+rank/select n=2^22: rank 0.72us (vs 0.36us at 2^12), select 1.68us; naive at 2^18: rank 55us, select 82us; index overhead 50.0%
+wavelet DNA n=1000000: 2.0 bits/base payload (4.0x smaller than 8-bit), 3.001 with rank/select index (2.67x); access 1.95us, rank 1.67us, median 2.88us
+wavelet text n=156609 sigma=98: H0 4.671, balanced 6.742 bits/sym, Huffman 4.688 bits/sym payload, 7.246 with index
+wavelet Zipf n=200000: H0 4.003, balanced 8.0, Huffman 4.058 bits/sym (payload ratio 1.97x vs 8-bit)
+DNA FM-index n=1000000: pattern count 30us vs str.find scan 3069us; FM-index 6.94 bits/base vs 64 for a plain suffix array
+transpose n=1024 (32 KiB L1): naive 1179648 misses, blocked 262144, recursive 262144 (compulsory 262144; naive 4.5x more)
+matmul n=96: L1 (8 KiB) misses ijk 112896, ikj 112896, blocked-8 28800, recursive 18432; L2 (64 KiB) ijk 112896, recursive 6336, blocked-8 16128
+traversal n=1024: misses row 131072, column 1048576, recursive 131072
+pure Python matmul n=96: ijk 0.029s, ikj 0.030s, recursive (leaf 1) 0.351s, recursive (leaf 16) 0.033s
+numpy transpose n=4096: naive 0.309s, blocked 0.083s, recursive 0.082s, A.T.copy() 0.226s
+vEB layout N=1048575: cold misses/search at 64 B: sorted 16.84, BFS 16.79, vEB 9.08; at 4096 B: sorted 11.00, BFS 10.91, vEB 3.32
+vEB warm 32 KiB cache, 64 B lines: sorted 10.05, BFS 9.02, vEB 4.91
